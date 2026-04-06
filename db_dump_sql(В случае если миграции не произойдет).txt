@@ -1,0 +1,63 @@
+-- Создание базы данных
+CREATE DATABASE IF NOT EXISTS `meeting_rooms` 
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
+USE `meeting_rooms`;
+
+-- Таблица комнат
+CREATE TABLE IF NOT EXISTS `rooms` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT NULL,
+    `capacity` INT NOT NULL,
+    `equipment` VARCHAR(255) NULL,
+    `location` VARCHAR(100) NULL,
+    `is_active` BOOLEAN DEFAULT TRUE,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Таблица бронирований
+CREATE TABLE IF NOT EXISTS `bookings` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `room_id` BIGINT UNSIGNED NOT NULL,
+    `event_name` VARCHAR(200) NOT NULL,
+    `description` TEXT NULL,
+    `date` DATE NOT NULL,
+    `start_time` TIME NOT NULL,
+    `end_time` TIME NOT NULL,
+    `booked_by` VARCHAR(100) NOT NULL,
+    `email` VARCHAR(100) NULL,
+    `phone` VARCHAR(20) NULL,
+    `participants_count` INT NULL,
+    `status` ENUM('pending', 'confirmed', 'cancelled') DEFAULT 'pending',
+    `additional_info` TEXT NULL,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    FOREIGN KEY (`room_id`) REFERENCES `rooms`(`id`) ON DELETE CASCADE,
+    INDEX `idx_bookings_date_room` (`date`, `room_id`),
+    INDEX `idx_bookings_status` (`status`),
+    INDEX `idx_bookings_booked_by` (`booked_by`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Добавление тестовых данных для комнат
+INSERT INTO `rooms` (`name`, `description`, `capacity`, `equipment`, `location`, `is_active`) VALUES
+('Конференц-зал "Атлант"', 'Просторный зал для больших встреч', 50, 'Проектор, экран, маркерная доска, кондиционер, микрофоны', '3 этаж, каб. 301', 1),
+('Переговорная "Олимп"', 'Современная комната для презентаций', 20, 'Интерактивная панель, видеоконференция, флипчарт', '2 этаж, каб. 205', 1),
+('Комната для совещаний "Лидер"', 'Идеально для командных встреч', 12, 'Телевизор, маркерная доска, кофе-пойнт', '1 этаж, каб. 108', 1),
+('Мини-переговорная "Фокус"', 'Для небольших переговоров 2-4 человека', 4, 'Wi-Fi, розетки, столик', '1 этаж, каб. 112', 1),
+('VIP-зал "Президент"', 'Для важных встреч с руководством', 15, 'Проектор, экран, кондиционер, кулер, президиум', '3 этаж, каб. 315', 1),
+('Коворкинг "Открытое пространство"', 'Открытая зона для неформальных встреч', 30, 'Кухня, диваны, Wi-Fi, розетки', '2 этаж, холл', 1),
+('Комната 404', 'Временно недоступна', 10, 'Стандартное', '4 этаж', 0);
+
+-- Добавление тестовых бронирований
+INSERT INTO `bookings` (`room_id`, `event_name`, `description`, `date`, `start_time`, `end_time`, `booked_by`, `email`, `phone`, `participants_count`, `status`) VALUES
+(1, 'Еженедельное собрание', 'Обсуждение планов на неделю', CURDATE(), '10:00:00', '11:30:00', 'Иванов Иван', 'ivanov@company.com', '+7-999-123-45-67', 25, 'confirmed'),
+(2, 'Презентация продукта', 'Демонстрация нового функционала', CURDATE(), '14:00:00', '15:30:00', 'Петров Петр', 'petrov@company.com', '+7-999-234-56-78', 15, 'confirmed'),
+(3, 'Мозговой штурм', 'Генерация идей для нового проекта', DATE_ADD(CURDATE(), INTERVAL 1 DAY), '11:00:00', '13:00:00', 'Сидорова Анна', 'sidorova@company.com', '+7-999-345-67-89', 8, 'pending'),
+(1, 'Стратегическая сессия', 'Планирование на квартал', DATE_ADD(CURDATE(), INTERVAL 2 DAY), '09:00:00', '18:00:00', 'Козлов Дмитрий', 'kozlov@company.com', '+7-999-456-78-90', 40, 'confirmed'),
+(5, 'Встреча с инвесторами', 'Обсуждение финансирования', DATE_ADD(CURDATE(), INTERVAL 3 DAY), '15:00:00', '17:00:00', 'Николаева Елена', 'nikolaeva@company.com', '+7-999-567-89-01', 10, 'pending'),
+(4, 'Собеседование', 'Интервью с кандидатом', DATE_ADD(CURDATE(), INTERVAL 1 DAY), '16:00:00', '17:00:00', 'HR Департамент', 'hr@company.com', '+7-999-678-90-12', 3, 'confirmed');
