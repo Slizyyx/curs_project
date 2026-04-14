@@ -1,5 +1,4 @@
 <?php
-// app/Models/Booking.php
 
 namespace App\Models;
 
@@ -11,53 +10,34 @@ class Booking extends Model
     use HasFactory;
 
     protected $fillable = [
-        'room_id', 'event_name', 'description', 'date', 'start_time', 
-        'end_time', 'booked_by', 'email', 'phone', 'participants_count', 
-        'status', 'additional_info'
+        'room_id', 'event_name', 'description', 'date', 
+        'start_time', 'end_time', 'booked_by', 'email', 
+        'phone', 'participants_count', 'status', 'additional_info'
     ];
 
     protected $casts = [
         'date' => 'date',
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
+        'participants_count' => 'integer'
     ];
 
-    // Связь с комнатой
     public function room()
     {
         return $this->belongsTo(Room::class);
     }
 
-    // Аксессор для названия комнаты (для использования в шаблоне)
-    public function getRoomNameAttribute()
+    public function getStatusBadgeAttribute()
     {
-        return $this->room ? $this->room->name : null;
+        $badges = [
+            'pending' => 'warning',
+            'confirmed' => 'success',
+            'cancelled' => 'danger'
+        ];
+        return $badges[$this->status] ?? 'secondary';
     }
 
-    // Scope для активных бронирований
-    public function scopeActive($query)
+    public function getTimeRangeAttribute()
     {
-        return $query->where('status', 'confirmed')
-                     ->where('date', '>=', date('Y-m-d'));
+        return date('H:i', strtotime($this->start_time)) . ' - ' . 
+               date('H:i', strtotime($this->end_time));
     }
-
-    // Проверка конфликта времени
-    public static function checkConflict($room_id, $date, $start_time, $end_time, $except_id = null)
-    {
-        $query = self::where('room_id', $room_id)
-            ->where('date', $date)
-            ->where('status', 'confirmed')
-            ->where(function($q) use ($start_time, $end_time) {
-                $q->where(function($q) use ($start_time, $end_time) {
-                    $q->where('start_time', '<', $end_time)
-                      ->where('end_time', '>', $start_time);
-                });
-            });
-
-        if ($except_id) {
-            $query->where('id', '!=', $except_id);
-        }
-
-        return $query->exists();
-    }
-}   
+}

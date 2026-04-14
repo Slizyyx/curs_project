@@ -1,5 +1,4 @@
 <?php
-// app/Models/Room.php
 
 namespace App\Models;
 
@@ -20,38 +19,33 @@ class Room extends Model
         'capacity' => 'integer'
     ];
 
-    // Связь с бронированиями
     public function bookings()
     {
         return $this->hasMany(Booking::class);
     }
 
-    // Получить активные бронирования на сегодня
-    public function activeBookingsToday()
+    public function activeBookings()
     {
-        return $this->bookings()
-            ->where('date', date('Y-m-d'))
-            ->where('status', 'confirmed')
-            ->get();
+        return $this->bookings()->where('status', 'confirmed')
+            ->where('date', '>=', now()->toDateString());
     }
 
-    // Проверка доступности комнаты в определенное время
-    public function isAvailable($date, $start_time, $end_time, $except_booking_id = null)
+    public function isAvailable($date, $startTime, $endTime, $excludeBookingId = null)
     {
         $query = $this->bookings()
             ->where('date', $date)
-            ->where('status', 'confirmed')
-            ->where(function($q) use ($start_time, $end_time) {
-                $q->whereBetween('start_time', [$start_time, $end_time])
-                  ->orWhereBetween('end_time', [$start_time, $end_time])
-                  ->orWhere(function($q) use ($start_time, $end_time) {
-                      $q->where('start_time', '<=', $start_time)
-                        ->where('end_time', '>=', $end_time);
+            ->where('status', '!=', 'cancelled')
+            ->where(function($q) use ($startTime, $endTime) {
+                $q->whereBetween('start_time', [$startTime, $endTime])
+                  ->orWhereBetween('end_time', [$startTime, $endTime])
+                  ->orWhere(function($q2) use ($startTime, $endTime) {
+                      $q2->where('start_time', '<=', $startTime)
+                         ->where('end_time', '>=', $endTime);
                   });
             });
 
-        if ($except_booking_id) {
-            $query->where('id', '!=', $except_booking_id);
+        if ($excludeBookingId) {
+            $query->where('id', '!=', $excludeBookingId);
         }
 
         return !$query->exists();
