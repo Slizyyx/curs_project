@@ -61,4 +61,14 @@ class RoomController extends Controller
     {
         //
     }
+	public function checkAvailability(Request $request, Room $room)
+{
+    $date = $request->get('date');
+    $startTime = $request->get('start_time');
+    $endTime = $request->get('end_time');
+    
+    $isAvailable = $room->isAvailable($date, $startTime, $endTime);
+    
+    return response()->json(['available' => $isAvailable]);
+}
 }
